@@ -3,9 +3,7 @@
  */
 package com.michelin.kafka.config.providers;
 
-import com.michelin.kafka.config.providers.AES256ConfigProvider;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.connect.errors.DataException;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.Cipher;
@@ -32,8 +30,9 @@ class AES256ConfigProviderTest {
 
         Set<String> wrongKey = new HashSet<>();
         wrongKey.add("does_not_match"); // secret can't be decoded
-        assertThrows(DataException.class, () -> configProvider.get("", wrongKey));
+        assertThrows(ConfigException.class, () -> configProvider.get("", wrongKey));
     }
+
     @Test
     void DecryptFailure_InvalidKey() {
         AES256ConfigProvider configProvider = new AES256ConfigProvider();
@@ -45,10 +44,11 @@ class AES256ConfigProviderTest {
 
         Set<String> wrongKey = new HashSet<>();
         wrongKey.add("mfw43l96122yZiDhu2RevQ=="); // secret can't be decoded
-        assertThrows(DataException.class, () -> configProvider.get("", wrongKey));
+        assertThrows(ConfigException.class, () -> configProvider.get("", wrongKey));
     }
+
     @Test
-    void DecryptSuccess(){
+    void DecryptSuccess() {
         String originalPassword = "hello !";
         String encodedPassword = "hgkWF2Gp3qPxcPnVifDgJA==";
 
@@ -67,8 +67,9 @@ class AES256ConfigProviderTest {
 
         assertEquals(originalPassword, configProvider.get("", rightKeys).data().get(encodedPassword));
     }
+
     @Test
-    void MissingConfig_key(){
+    void MissingConfig_key() {
         AES256ConfigProvider configProvider = new AES256ConfigProvider();
 
         Map<String, String> configs = new HashMap<>();
@@ -76,8 +77,9 @@ class AES256ConfigProviderTest {
 
         assertThrows(ConfigException.class, () -> configProvider.configure(configs));
     }
+
     @Test
-    void MissingConfig_salt(){
+    void MissingConfig_salt() {
         AES256ConfigProvider configProvider = new AES256ConfigProvider();
 
         Map<String, String> configs = new HashMap<>();
@@ -85,6 +87,7 @@ class AES256ConfigProviderTest {
 
         assertThrows(ConfigException.class, () -> configProvider.configure(configs));
     }
+
     static class AES256Helper {
         public static String encrypt(String key, String salt, String strToEncrypt) {
             try {

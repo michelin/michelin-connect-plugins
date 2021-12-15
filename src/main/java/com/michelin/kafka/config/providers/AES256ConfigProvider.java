@@ -8,9 +8,6 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.provider.ConfigProvider;
 import org.apache.kafka.common.config.types.Password;
-import org.apache.kafka.connect.errors.DataException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -73,7 +70,7 @@ public class AES256ConfigProvider implements ConfigProvider {
             try {
                 decoded.put(key, new String(cipher.doFinal(Base64.getDecoder().decode(key))));
             } catch (Exception e) {
-                throw new DataException("Error while decrypting " + key, e);
+                throw new ConfigException("Error while decrypting " + key, e);
             }
         });
 

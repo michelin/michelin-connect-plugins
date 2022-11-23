@@ -7,6 +7,7 @@ import org.apache.kafka.connect.transforms.predicates.Predicate;
 import org.apache.kafka.connect.transforms.util.RegexValidator;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -58,6 +59,17 @@ public class HeaderValueMatches<R extends ConnectRecord<R>> implements Predicate
         // Loop over headers (multiple with same name allowed)
         while (headerIterator.hasNext()) {
             Header header = headerIterator.next();
+            final Object valueAsObject = header.value();
+            final String valueAsString;
+            if (valueAsObject != null) {
+                if (valueAsObject instanceof byte[]) {
+                    valueAsString = new String((byte[]) valueAsObject, StandardCharsets.UTF_8);
+                } else {
+                    valueAsString = valueAsObject.toString();
+                }
+            } else {
+                valueAsString = null;
+            }
             if (header.value() != null && pattern.matcher(header.value().toString()).matches()) {
                 return true;
             }

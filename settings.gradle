@@ -13,7 +13,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'io.alcide:gradle-semantic-build-versioning:4.2.1'
+        classpath 'io.alcide:gradle-semantic-build-versioning:4.2.2'
     }
 }
 

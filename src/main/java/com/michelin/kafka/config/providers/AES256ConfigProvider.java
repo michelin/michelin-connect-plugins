@@ -9,31 +9,38 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.provider.ConfigProvider;
 import org.apache.kafka.common.config.types.Password;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.spec.KeySpec;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * AES256 encrypted Kafka config provider.
+ *
+ * @author Michelin
+ */
 public class AES256ConfigProvider implements ConfigProvider {
-
     public static final String OVERVIEW_DOC = "A ConfigProvider to decode values encoded with AES256 key.";
 
     private static final String AES_KEY_CONFIG = "key";
     private static final String SALT_CONFIG = "salt";
+
+    /**
+     * Definition of accepted parameters: key and salt.
+     */
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
             .define(AES_KEY_CONFIG, ConfigDef.Type.PASSWORD, ConfigDef.NO_DEFAULT_VALUE,
-                    new ConfigDef.NonNullValidator(), ConfigDef.Importance.HIGH,
-                    "The AES256 key.")
+                    new ConfigDef.NonNullValidator(), ConfigDef.Importance.HIGH, "The AES256 key.")
             .define(SALT_CONFIG, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE,
-                    new ConfigDef.NonEmptyString(), ConfigDef.Importance.HIGH,
-                    "The AES256 salt.");
+                    new ConfigDef.NonEmptyString(), ConfigDef.Importance.HIGH, "The AES256 salt.");
 
     /**
      * Represents the aes256 key
@@ -46,26 +53,25 @@ public class AES256ConfigProvider implements ConfigProvider {
     private String salt;
 
     @Override
-    public void configure(Map<String, ?> configs) {
-        Map<String, Object> parsedConfigs = CONFIG_DEF.parse(configs);
+    public void configure(final Map<String, ?> pConfigs) {
+        final var parsedConfigs = CONFIG_DEF.parse(pConfigs);
         this.aesKey = (Password) parsedConfigs.get(AES_KEY_CONFIG);
-        this.salt = parsedConfigs.get(SALT_CONFIG).toString();
+        this.salt = parsedConfigs.get(SALT_CONFIG).toString().trim();
     }
 
     @Override
-    public ConfigData get(String path) {
+    public ConfigData get(final String pPath) {
         return new ConfigData(new HashMap<>());
     }
 
     @Override
-    public ConfigData get(String path, Set<String> keys) {
-        Map<String, String> decoded = new HashMap<>();
-
-        final Cipher cipher = this.getCipher();
-        keys.forEach(key -> {
+    public ConfigData get(final String pPath, final Set<String> pKeys) {
+        final var decoded = new HashMap<String, String>();
+        final var cipher = this.getCipher();
+        pKeys.forEach(key -> {
             try {
-                decoded.put(key, new String(cipher.doFinal(Base64.getDecoder().decode(key))));
-            } catch (Exception e) {
+                decoded.put(key, new String(cipher.doFinal(Base64.getDecoder().decode(key)), StandardCharsets.UTF_8));
+            } catch (IllegalArgumentException | IllegalBlockSizeException | BadPaddingException e) {
                 throw new ConfigException("Error while decrypting " + key, e);
             }
         });
@@ -85,20 +91,18 @@ public class AES256ConfigProvider implements ConfigProvider {
      */
     private Cipher getCipher() {
         try {
-            byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            final IvParameterSpec ivspec = new IvParameterSpec(iv);
+            final var ivspec = new IvParameterSpec(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
 
-            final SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-            final KeySpec spec = new PBEKeySpec(this.aesKey.value().toCharArray(), this.salt.getBytes(), 65536, 256);
-            final SecretKey tmp = factory.generateSecret(spec);
-            final SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+            final var factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            final var spec = new PBEKeySpec(this.aesKey.value().toCharArray(), this.salt.getBytes(StandardCharsets.UTF_8), 65536, 256);
+            final var tmp = factory.generateSecret(spec);
+            final var secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
 
-            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            final var cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
             return cipher;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new ConfigException("Error during Cipher initialization", e);
         }
     }
-
 }

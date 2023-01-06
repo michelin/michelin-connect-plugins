@@ -4,121 +4,131 @@ import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HeaderValueMatchesTest {
-    private HeaderValueMatches<SourceRecord> predicate = new HeaderValueMatches<>();
+class HeaderValueMatchesTest {
+    private final HeaderValueMatches<SourceRecord> predicate = new HeaderValueMatches<>();
 
     @Test
-    public void ValueMatches() {
-        final Map<String, Object> props = new HashMap<>();
+    void ValueMatches() {
+        final var props = new HashMap<String, Object>();
 
         props.put("header.name", "my-header");
         props.put("pattern", "fixed");
 
         predicate.configure(props);
 
-        ConnectHeaders headers = new ConnectHeaders();
+        final var headers = new ConnectHeaders();
         headers.add("my-header", "fixed", null);
         headers.add("unrelated-header", null, null);
 
-        final SourceRecord record = new SourceRecord(null, null, "test", 0,
+        final var record = new SourceRecord(null, null, "test", 0,
                 null, null, null, null, 0L, headers);
 
-        final boolean result = predicate.test(record);
-
-        assertTrue(result);
+        assertTrue(predicate.test(record));
     }
 
     @Test
-    public void ValueRegexMatches() {
-        final Map<String, Object> props = new HashMap<>();
+    void ValueRegexMatches() {
+        final var props = new HashMap<String, Object>();
 
         props.put("header.name", "license-plate");
         props.put("pattern", "[A-Z]{2}-[0-9]{3}-[A-Z]{2}");
 
         predicate.configure(props);
 
-        ConnectHeaders headers = new ConnectHeaders();
+        final var headers = new ConnectHeaders();
         headers.add("license-plate", "CG-768-AP", null);
         headers.add("unrelated-header", null, null);
 
-        final SourceRecord record = new SourceRecord(null, null, "test", 0,
+        final var record = new SourceRecord(null, null, "test", 0,
                 null, null, null, null, 0L, headers);
 
-        final boolean result = predicate.test(record);
-
-        assertTrue(result);
+        assertTrue(predicate.test(record));
     }
 
     @Test
-    public void valueNull() {
-        final Map<String, Object> props = new HashMap<>();
+    void ByteArrayValueRegexMatches() {
+        final var props = new HashMap<String, Object>();
+
+        props.put("header.name", "license-plate");
+        props.put("pattern", "[A-Z]{2}-[0-9]{3}-[A-Z]{2}");
+
+        predicate.configure(props);
+
+        final var headers = new ConnectHeaders();
+        headers.add("license-plate", "CG-768-AP".getBytes(StandardCharsets.UTF_8), null);
+        headers.add("unrelated-header", null, null);
+
+        final var record = new SourceRecord(null, null, "test", 0,
+                null, null, null, null, 0L, headers);
+
+        assertTrue(predicate.test(record));
+    }
+
+    @Test
+    void valueNull() {
+        final var props = new HashMap<String, Object>();
         props.put("header.name", "my-header");
         props.put("pattern", "fixed");
 
         predicate.configure(props);
 
-        ConnectHeaders headers = new ConnectHeaders();
+        final var headers = new ConnectHeaders();
         headers.add("my-header", null, null);
         headers.add("unrelated-header", null, null);
 
-        final SourceRecord record = new SourceRecord(null, null, "test", 0,
+        final var record = new SourceRecord(null, null, "test", 0,
                 null, null, null, null, 0L, headers);
 
-        final boolean result = predicate.test(record);
-
-        assertFalse(result);
+        assertFalse(predicate.test(record));
     }
 
     @Test
-    public void ValueNotMatching() {
-        final Map<String, Object> props = new HashMap<>();
+    void ValueNotMatching() {
+        final var props = new HashMap<String, Object>();
 
         props.put("header.name", "my-header");
         props.put("pattern", "fixed");
 
         predicate.configure(props);
 
-        ConnectHeaders headers = new ConnectHeaders();
+        final var headers = new ConnectHeaders();
         headers.add("my-header", "OTHER", null);
         headers.add("unrelated-header", null, null);
 
-        final SourceRecord record = new SourceRecord(null, null, "test", 0,
+        final var record = new SourceRecord(null, null, "test", 0,
                 null, null, null, null, 0L, headers);
 
-        final boolean result = predicate.test(record);
-
-        assertFalse(result);
+        assertFalse(predicate.test(record));
     }
 
     @Test
-    public void MissingHeaderDefaultBehavior() {
-        final Map<String, Object> props = new HashMap<>();
+    void MissingHeaderDefaultBehavior() {
+        final var props = new HashMap<String, Object>();
 
         props.put("header.name", "my-header");
         props.put("pattern", "fixed");
 
         predicate.configure(props);
 
-        ConnectHeaders headers = new ConnectHeaders();
+        final var headers = new ConnectHeaders();
         headers.add("other-header", "OTHER", null);
         headers.add("unrelated-header", null, null);
 
-        final SourceRecord record = new SourceRecord(null, null, "test", 0,
+        final var record = new SourceRecord(null, null, "test", 0,
                 null, null, null, null, 0L, headers);
 
-        final boolean result = predicate.test(record);
-
-        assertFalse(result);
+        assertFalse(predicate.test(record));
     }
 
     @Test
-    public void MissingHeaderOverriddenBehavior() {
-        final Map<String, Object> props = new HashMap<>();
+    void MissingHeaderOverriddenBehavior() {
+        final var props = new HashMap<String, Object>();
 
         props.put("header.name", "my-header");
         props.put("pattern", "fixed");
@@ -126,21 +136,19 @@ public class HeaderValueMatchesTest {
 
         predicate.configure(props);
 
-        ConnectHeaders headers = new ConnectHeaders();
+        final var headers = new ConnectHeaders();
         headers.add("other-header", "OTHER", null);
         headers.add("unrelated-header", null, null);
 
-        final SourceRecord record = new SourceRecord(null, null, "test", 0,
+        final var record = new SourceRecord(null, null, "test", 0,
                 null, null, null, null, 0L, headers);
 
-        final boolean result = predicate.test(record);
-
-        assertTrue(result);
+        assertTrue(predicate.test(record));
     }
 
     @Test
-    public void MultipleHeadersWithMatchingValue() {
-        final Map<String, Object> props = new HashMap<>();
+    void MultipleHeadersWithMatchingValue() {
+        final var props = new HashMap<String, Object>();
 
         props.put("header.name", "my-header");
         props.put("pattern", "fixed");
@@ -148,17 +156,15 @@ public class HeaderValueMatchesTest {
 
         predicate.configure(props);
 
-        ConnectHeaders headers = new ConnectHeaders();
+        final var headers = new ConnectHeaders();
         headers.add("my-header", "OTHER", null);
         headers.add("my-header", "DIFFERENT", null);
         headers.add("my-header", "fixed", null);
         headers.add("unrelated-header", null, null);
 
-        final SourceRecord record = new SourceRecord(null, null, "test", 0,
+        final var record = new SourceRecord(null, null, "test", 0,
                 null, null, null, null, 0L, headers);
 
-        final boolean result = predicate.test(record);
-
-        assertTrue(result);
+        assertTrue(predicate.test(record));
     }
 }

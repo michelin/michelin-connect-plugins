@@ -11,14 +11,18 @@ Nice to have when using Kafka Connect in a multi-tenant environment.
     config.providers.aes256.class=com.michelin.kafka.AES256ConfigProvider
     config.providers.aes256.param.key=0000111122223333
     config.providers.aes256.param.salt=0000111122223333
-    ````
-2. Provide an API to your users so that they can encrypt their passwords with your key  
-   https://github.com/twobeeb/aes-256-vault-api
+    ````  
+   
+2. Use NS4Kafka to encrypt your password, or provide an API to your users so that they can encrypt their passwords with your key
+   * NS4Kafka: https://github.com/michelin/kafkactl/blob/main/README.md
+   * AES256 API: https://github.com/twobeeb/aes-256-vault-api  
+
+
 3. Keep your key safe !
 
 ## Connector configuration
 
-Encode your password using API:
+Encode your password using the AES256 API:
 ````console
 curl -X POST http://admin-api/vault -d '{"password": "mypassword"}'
 > ${aes256:mfw43l96122yZiDhu2RevQ==}

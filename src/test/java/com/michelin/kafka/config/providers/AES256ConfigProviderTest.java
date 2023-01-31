@@ -62,6 +62,33 @@ class AES256ConfigProviderTest {
     }
 
     @Test
+    void DecryptSuccessBothAlgorithm() {
+        final var originalPassword = "hello !";
+        final var encodedPassword = "hgkWF2Gp3qPxcPnVifDgJA==";
+        final var encodedPasswordNS4K1 = "TlM0SxO5N1cXueLtuDRVEBCAacMVm/4dwYN0/SMjKGlnkNXFDDt7";
+        final var encodedPasswordNS4K2 = "TlM0S9g7l18K6q6pTXs5NGVL2vRVDyHbQ6NDliGPh6UlgL4+6MEX";
+        try (final var configProvider = new AES256ConfigProvider()) {
+            final var configs = new HashMap<String, String>();
+            configs.put("key", "key-aaaabbbbccccdddd");
+            configs.put("salt", "salt-aaaabbbbccccdddd");
+            configProvider.configure(configs);
+
+            // String encoded = AES256Helper.encrypt("aaaabbbbccccdddd",AES256ConfigProvider.DEFAULT_SALT, originalPassword);
+            // System.out.println(encoded);
+
+            final var rightKeys = new HashSet<String>();
+            rightKeys.add(encodedPassword);
+            rightKeys.add(encodedPasswordNS4K1);
+            rightKeys.add(encodedPasswordNS4K2);
+
+            var result = configProvider.get("", rightKeys).data();
+            assertEquals(originalPassword, result.get(encodedPassword));
+            assertEquals(originalPassword, result.get(encodedPasswordNS4K1));
+            assertEquals(originalPassword, result.get(encodedPasswordNS4K2));
+        }
+    }
+
+    @Test
     void MissingConfig_key() {
         try (final var configProvider = new AES256ConfigProvider()) {
             final var configs = new HashMap<String, String>();

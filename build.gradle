@@ -24,6 +24,10 @@ dependencies {
 
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+
+    // Dependencies provided by Kafka Connect
+    compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.19.0'
+    compileOnly 'org.slf4j:slf4j-api:1.7.36'
 }
 java {
     sourceCompatibility = '11'

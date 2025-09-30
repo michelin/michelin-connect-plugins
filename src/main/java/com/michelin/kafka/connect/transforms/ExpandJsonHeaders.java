@@ -52,9 +52,18 @@ public class ExpandJsonHeaders<R extends ConnectRecord<R>> implements Transforma
         log.info("Configured ExpandJsonHeaders with field='{}'", headerField);
     }
 
+    /**
+     * Applies the transformation to expand a JSON header into individual headers.
+     * Extracts key-value pairs from the specified JSON header field, adds them as
+     * separate headers, and removes the original JSON header. If the header is
+     * missing or invalid, the original record is returned unchanged.
+
+     * @param currentRecord the Kafka Connect record to transform
+     * @return the transformed record with expanded headers
+     */
     @Override
-    public R apply(R record) {
-        Headers headers = record.headers();
+    public R apply(R currentRecord) {
+        Headers headers = currentRecord.headers();
 
         try {
             Header headerValue = headers.allWithName(headerField).next();
@@ -63,18 +72,15 @@ public class ExpandJsonHeaders<R extends ConnectRecord<R>> implements Transforma
 
             if (!jsonNode.isObject()) {
                 log.warn("Field '{}' is not a JSON object, skipping header extraction", headerField);
-                return record;
+                return currentRecord;
             }
 
-            Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
-
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
+            jsonNode.properties().forEach(field -> {
                 String headerName = field.getKey();
                 String headerValueStr = field.getValue().asText();
                 headers.addString(headerName, headerValueStr);
                 log.debug("Added header: {} = {}", headerName, headerValueStr);
-            }
+            });
 
             log.debug("Successfully extracted headers from field '{}'", headerField);
 
@@ -82,23 +88,23 @@ public class ExpandJsonHeaders<R extends ConnectRecord<R>> implements Transforma
             headers.remove(headerField);
             log.debug("Removed original header '{}'", headerField);
         } catch (NoSuchElementException e) {
-            log.debug("No '{}' field found in record, skipping header extraction", headerField);
-            // Return original record if field is not found
-            return record;
+            log.debug("No '{}' field found in currentRecord, skipping header extraction", headerField);
+            // Return original currentRecord if field is not found
+            return currentRecord;
         } catch (Exception e) {
             log.warn("Failed to parse JSON from field '{}': {}", headerField, e.getMessage());
-            // Return original record on parsing errors
-            return record;
+            // Return original currentRecord on parsing errors
+            return currentRecord;
         }
 
-        return record.newRecord(
-            record.topic(),
-            record.kafkaPartition(),
-            record.keySchema(),
-            record.key(),
-            record.valueSchema(),
-            record.value(),
-            record.timestamp(),
+        return currentRecord.newRecord(
+            currentRecord.topic(),
+            currentRecord.kafkaPartition(),
+            currentRecord.keySchema(),
+            currentRecord.key(),
+            currentRecord.valueSchema(),
+            currentRecord.value(),
+            currentRecord.timestamp(),
             headers
         );
     }

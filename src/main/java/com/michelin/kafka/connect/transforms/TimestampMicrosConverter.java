@@ -279,7 +279,7 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
 
         if (!VALID_TYPES.contains(type)) {
             throw new ConfigException("Unknown timestamp type in TimestampConverter: " + type + ". Valid values are "
-                                      + Utils.join(VALID_TYPES, ", ") + ".");
+                                      + String.join(", ", VALID_TYPES) + ".");
         }
         if (type.equals(TYPE_STRING) && formatPattern.trim().isEmpty()) {
             throw new ConfigException("TimestampConverter requires format option to be specified when using string timestamps");

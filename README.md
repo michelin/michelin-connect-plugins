@@ -7,6 +7,7 @@ Copy `michelin-connect-plugins.jar` into the ``plugin.path`` folder of your Kafk
 
 ## Transformations
   - [TimestampMicrosConverter](doc/transforms/timestamp-micros-converter.md)
+  - [ExpandJsonHeaders](doc/transforms/expand-json-headers.md)
 ## Predicates
   - [HeaderValueMatches](doc/predicates/header-value-matches.md)
 ## Config Providers

@@ -9,6 +9,8 @@
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java-library'
+    // Add spotless plugin
+    id("com.diffplug.spotless") version "7.2.1"
 }
 
 repositories {
@@ -40,4 +42,31 @@ java {
 test {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+spotless {
+    java {
+        target "src/main/java/**/*.java", "src/test/java/**/*.java"
+        palantirJavaFormat("2.58.0").style("PALANTIR").formatJavadoc(true)
+        removeUnusedImports()
+        formatAnnotations()
+        importOrder()
+        trimTrailingWhitespace()
+        endWithNewline()
+        licenseHeaderFile {
+            file ".spotless/HEADER"
+        }
+    }
+    groovyGradle {
+        target "*.gradle"
+        importOrder()
+        removeSemicolons()
+        leadingTabsToSpaces()
+    }
+    yaml {
+        target "src/main/resources/*.yml", "src/test/resources/**/*.yml"
+        jackson()
+                .feature('ORDER_MAP_ENTRIES_BY_KEYS', true)
+                .yamlFeature('WRITE_DOC_START_MARKER', false)
+    }
 }

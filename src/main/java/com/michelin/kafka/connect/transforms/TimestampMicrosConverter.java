@@ -1,11 +1,38 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.michelin.kafka.connect.transforms;
 
+import static org.apache.kafka.connect.transforms.util.Requirements.requireMap;
+import static org.apache.kafka.connect.transforms.util.Requirements.requireStructOrNull;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
 import org.apache.kafka.common.cache.SynchronizedCache;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.utils.Utils;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.*;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -14,19 +41,9 @@ import org.apache.kafka.connect.transforms.Transformation;
 import org.apache.kafka.connect.transforms.util.SchemaUtil;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.kafka.connect.transforms.util.Requirements.requireMap;
-import static org.apache.kafka.connect.transforms.util.Requirements.requireStructOrNull;
-
 /**
- * Fork from <a href="in progress Kafka TimestampConverter">https://github.com/apache/kafka/blob/trunk/connect/transforms/src/main/java/org/apache/kafka/connect/transforms/TimestampConverter.java</a>
+ * Fork from <a href="in progress Kafka
+ * TimestampConverter">https://github.com/apache/kafka/blob/trunk/connect/transforms/src/main/java/org/apache/kafka/connect/transforms/TimestampConverter.java</a>
  * to support timestamps microseconds by default.
  *
  * @param <R> Type of he record.
@@ -35,9 +52,10 @@ import static org.apache.kafka.connect.transforms.util.Requirements.requireStruc
 public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> implements Transformation<R> {
     public static final String OVERVIEW_DOC =
             "Convert timestamps between different formats such as Unix epoch, strings, and Connect Date/Timestamp types."
-            + "Applies to individual fields or to the entire value."
-            + "<p/>Use the concrete transformation type designed for the record key (<code>" + TimestampMicrosConverter.Key.class.getName() + "</code>) "
-            + "or value (<code>" + TimestampMicrosConverter.Value.class.getName() + "</code>).";
+                    + "Applies to individual fields or to the entire value."
+                    + "<p/>Use the concrete transformation type designed for the record key (<code>"
+                    + TimestampMicrosConverter.Key.class.getName() + "</code>) "
+                    + "or value (<code>" + TimestampMicrosConverter.Value.class.getName() + "</code>).";
 
     public static final String FIELD_CONFIG = "field";
     private static final String FIELD_DEFAULT = "";
@@ -62,50 +80,59 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
     private static final String UNIX_PRECISION_NANOS = "nanoseconds";
     private static final String UNIX_PRECISION_SECONDS = "seconds";
 
-    private static final Set<String> VALID_TYPES = new HashSet<>(Arrays.asList(TYPE_STRING, TYPE_UNIX, TYPE_DATE, TYPE_TIME, TYPE_TIMESTAMP));
+    private static final Set<String> VALID_TYPES =
+            new HashSet<>(Arrays.asList(TYPE_STRING, TYPE_UNIX, TYPE_DATE, TYPE_TIME, TYPE_TIMESTAMP));
 
     private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
-    public static final Schema OPTIONAL_DATE_SCHEMA = org.apache.kafka.connect.data.Date.builder().optional().schema();
-    public static final Schema OPTIONAL_TIMESTAMP_SCHEMA = Timestamp.builder().optional().schema();
+    public static final Schema OPTIONAL_DATE_SCHEMA =
+            org.apache.kafka.connect.data.Date.builder().optional().schema();
+    public static final Schema OPTIONAL_TIMESTAMP_SCHEMA =
+            Timestamp.builder().optional().schema();
     public static final Schema OPTIONAL_TIME_SCHEMA = Time.builder().optional().schema();
 
-    /**
-     * Definition of accepted parameters: field, target.type, format and unix.precision.
-     */
+    /** Definition of accepted parameters: field, target.type, format and unix.precision. */
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
-            .define(FIELD_CONFIG, ConfigDef.Type.STRING, FIELD_DEFAULT, ConfigDef.Importance.HIGH,
+            .define(
+                    FIELD_CONFIG,
+                    ConfigDef.Type.STRING,
+                    FIELD_DEFAULT,
+                    ConfigDef.Importance.HIGH,
                     "The field containing the timestamp, or empty if the entire value is a timestamp")
-            .define(TARGET_TYPE_CONFIG, ConfigDef.Type.STRING, ConfigDef.NO_DEFAULT_VALUE,
+            .define(
+                    TARGET_TYPE_CONFIG,
+                    ConfigDef.Type.STRING,
+                    ConfigDef.NO_DEFAULT_VALUE,
                     ConfigDef.ValidString.in(TYPE_STRING, TYPE_UNIX, TYPE_DATE, TYPE_TIME, TYPE_TIMESTAMP),
                     ConfigDef.Importance.HIGH,
                     "The desired timestamp representation: string, unix, Date, Time, or Timestamp")
-            .define(FORMAT_CONFIG, ConfigDef.Type.STRING, FORMAT_DEFAULT, ConfigDef.Importance.MEDIUM,
-                    "A SimpleDateFormat-compatible format for the timestamp. " +
-                    "Used to generate the output when type=string or used to parse the input if the input is a string.")
-            .define(UNIX_PRECISION_CONFIG, ConfigDef.Type.STRING, UNIX_PRECISION_DEFAULT,
+            .define(
+                    FORMAT_CONFIG,
+                    ConfigDef.Type.STRING,
+                    FORMAT_DEFAULT,
+                    ConfigDef.Importance.MEDIUM,
+                    "A SimpleDateFormat-compatible format for the timestamp. "
+                            + "Used to generate the output when type=string or used to parse the input if the input is a string.")
+            .define(
+                    UNIX_PRECISION_CONFIG,
+                    ConfigDef.Type.STRING,
+                    UNIX_PRECISION_DEFAULT,
                     ConfigDef.ValidString.in(
                             UNIX_PRECISION_NANOS, UNIX_PRECISION_MICROS,
                             UNIX_PRECISION_MILLIS, UNIX_PRECISION_SECONDS),
                     ConfigDef.Importance.LOW,
-                    "The desired Unix precision for the timestamp: seconds, milliseconds, microseconds, or nanoseconds. " +
-                    "Used to generate the output when type=unix or used to parse the input if the input is a Long." +
-                    "Note: This SMT will cause precision loss during conversions from, and to, values with sub-millisecond components.");
+                    "The desired Unix precision for the timestamp: seconds, milliseconds, microseconds, or nanoseconds. "
+                            + "Used to generate the output when type=unix or used to parse the input if the input is a Long."
+                            + "Note: This SMT will cause precision loss during conversions from, and to, values with sub-millisecond components.");
 
     private interface TimestampTranslator {
-        /**
-         * Convert from the type-specific format to the universal java.util.Date format
-         */
+        /** Convert from the type-specific format to the universal java.util.Date format */
         Date toRaw(final Config pConfig, final Object pOrig);
 
-        /**
-         * Get the schema for this format.
-         */
+        /** Get the schema for this format. */
         Schema typeSchema(final boolean pIsOptional);
 
-        /**
-         * Convert from the universal java.util.Date format to the type-specific format
-         */
+        /** Convert from the universal java.util.Date format to the type-specific format */
         Object toType(final Config pConfig, final Date pOrig);
     }
 
@@ -121,8 +148,10 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
                 try {
                     return pConfig.format.parse((String) pOrig);
                 } catch (final ParseException e) {
-                    throw new DataException("Could not parse timestamp: value (" + pOrig + ") does not match pattern ("
-                                            + pConfig.format.toPattern() + ")", e);
+                    throw new DataException(
+                            "Could not parse timestamp: value (" + pOrig + ") does not match pattern ("
+                                    + pConfig.format.toPattern() + ")",
+                            e);
                 }
             }
 
@@ -150,9 +179,11 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
                     case UNIX_PRECISION_SECONDS:
                         return TimestampMicros.toLogical(TimestampMicros.SCHEMA, TimeUnit.SECONDS.toMillis(unixTime));
                     case UNIX_PRECISION_MICROS:
-                        return TimestampMicros.toLogical(TimestampMicros.SCHEMA, TimeUnit.MICROSECONDS.toMillis(unixTime));
+                        return TimestampMicros.toLogical(
+                                TimestampMicros.SCHEMA, TimeUnit.MICROSECONDS.toMillis(unixTime));
                     case UNIX_PRECISION_NANOS:
-                        return TimestampMicros.toLogical(TimestampMicros.SCHEMA, TimeUnit.NANOSECONDS.toMillis(unixTime));
+                        return TimestampMicros.toLogical(
+                                TimestampMicros.SCHEMA, TimeUnit.NANOSECONDS.toMillis(unixTime));
                     case UNIX_PRECISION_MILLIS:
                     default:
                         return TimestampMicros.toLogical(TimestampMicros.SCHEMA, unixTime);
@@ -257,7 +288,8 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
         private final SimpleDateFormat format;
         private final String unixPrecision;
 
-        private Config(final String pField, final String pType, final SimpleDateFormat pFormat, final String pUnixPrecision) {
+        private Config(
+                final String pField, final String pType, final SimpleDateFormat pFormat, final String pUnixPrecision) {
             field = pField;
             type = pType;
             format = pFormat;
@@ -279,10 +311,11 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
 
         if (!VALID_TYPES.contains(type)) {
             throw new ConfigException("Unknown timestamp type in TimestampConverter: " + type + ". Valid values are "
-                                      + String.join(", ", VALID_TYPES) + ".");
+                    + String.join(", ", VALID_TYPES) + ".");
         }
         if (type.equals(TYPE_STRING) && formatPattern.trim().isEmpty()) {
-            throw new ConfigException("TimestampConverter requires format option to be specified when using string timestamps");
+            throw new ConfigException(
+                    "TimestampConverter requires format option to be specified when using string timestamps");
         }
         SimpleDateFormat format = null;
         if (formatPattern != null && !formatPattern.trim().isEmpty()) {
@@ -290,8 +323,10 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
                 format = new SimpleDateFormat(formatPattern);
                 format.setTimeZone(UTC);
             } catch (IllegalArgumentException e) {
-                throw new ConfigException("TimestampConverter requires a SimpleDateFormat-compatible pattern for string timestamps: "
-                                          + formatPattern, e);
+                throw new ConfigException(
+                        "TimestampConverter requires a SimpleDateFormat-compatible pattern for string timestamps: "
+                                + formatPattern,
+                        e);
             }
         }
         config = new Config(field, type, format, unixPrecision);
@@ -333,7 +368,14 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
 
         @Override
         protected R newRecord(final R pRecord, final Schema pUpdatedSchema, final Object pUpdatedValue) {
-            return pRecord.newRecord(pRecord.topic(), pRecord.kafkaPartition(), pUpdatedSchema, pUpdatedValue, pRecord.valueSchema(), pRecord.value(), pRecord.timestamp());
+            return pRecord.newRecord(
+                    pRecord.topic(),
+                    pRecord.kafkaPartition(),
+                    pUpdatedSchema,
+                    pUpdatedValue,
+                    pRecord.valueSchema(),
+                    pRecord.value(),
+                    pRecord.timestamp());
         }
     }
 
@@ -350,7 +392,14 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
 
         @Override
         protected R newRecord(final R pRecord, final Schema pUpdatedSchema, final Object pUpdatedValue) {
-            return pRecord.newRecord(pRecord.topic(), pRecord.kafkaPartition(), pRecord.keySchema(), pRecord.key(), pUpdatedSchema, pUpdatedValue, pRecord.timestamp());
+            return pRecord.newRecord(
+                    pRecord.topic(),
+                    pRecord.kafkaPartition(),
+                    pRecord.keySchema(),
+                    pRecord.key(),
+                    pUpdatedSchema,
+                    pUpdatedValue,
+                    pRecord.timestamp());
         }
     }
 
@@ -375,7 +424,11 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
             final var builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
             for (final Field field : schema.fields()) {
                 if (field.name().equals(config.field)) {
-                    builder.field(field.name(), TRANSLATORS.get(config.type).typeSchema(field.schema().isOptional()));
+                    builder.field(
+                            field.name(),
+                            TRANSLATORS
+                                    .get(config.type)
+                                    .typeSchema(field.schema().isOptional()));
                 } else {
                     builder.field(field.name(), field.schema());
                 }
@@ -426,9 +479,7 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
         return newRecord(pRecord, null, updatedValue);
     }
 
-    /**
-     * Determine the type/format of the timestamp based on the schema
-     */
+    /** Determine the type/format of the timestamp based on the schema */
     private static String timestampTypeFromSchema(final Schema pSchema) {
         if (Timestamp.LOGICAL_NAME.equals(pSchema.name())) {
             return TYPE_TIMESTAMP;
@@ -446,9 +497,7 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
         throw new ConnectException("Schema " + pSchema + " does not correspond to a known timestamp type format");
     }
 
-    /**
-     * Infer the type/format of the timestamp based on the raw Java type
-     */
+    /** Infer the type/format of the timestamp based on the raw Java type */
     private static String inferTimestampType(final Object pTimestamp) {
         // Note that we can't infer all types, e.g. Date/Time/Timestamp all have the same runtime representation as a
         // java.util.Date
@@ -459,13 +508,14 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
         } else if (pTimestamp instanceof String) {
             return TYPE_STRING;
         }
-        throw new DataException("TimestampConverter does not support " + pTimestamp.getClass() + " objects as timestamps");
+        throw new DataException(
+                "TimestampConverter does not support " + pTimestamp.getClass() + " objects as timestamps");
     }
 
     /**
      * Convert the given timestamp to the target timestamp format.
      *
-     * @param pTimestamp       the input timestamp, may be null
+     * @param pTimestamp the input timestamp, may be null
      * @param pTimestampFormat the format of the timestamp, or null if the format should be inferred
      * @return the converted timestamp
      */
@@ -505,14 +555,16 @@ public abstract class TimestampMicrosConverter<R extends ConnectRecord<R>> imple
 
         public static long fromLogical(final Schema pSchema, final java.util.Date pValue) {
             if (!LOGICAL_NAME.equals(pSchema.name())) {
-                throw new DataException("Requested conversion of TimestampMicros object but the schema does not match.");
+                throw new DataException(
+                        "Requested conversion of TimestampMicros object but the schema does not match.");
             }
             return ChronoUnit.MILLIS.between(Instant.EPOCH, pValue.toInstant());
         }
 
         public static java.util.Date toLogical(final Schema pSchema, final long pValue) {
             if (!LOGICAL_NAME.equals(pSchema.name())) {
-                throw new DataException("Requested conversion of TimestampMicros object but the schema does not match.");
+                throw new DataException(
+                        "Requested conversion of TimestampMicros object but the schema does not match.");
             }
             return Date.from(Instant.EPOCH.plus(pValue, ChronoUnit.MICROS));
         }

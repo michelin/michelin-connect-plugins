@@ -29,7 +29,7 @@ dependencies {
     testImplementation 'org.apache.kafka:kafka_2.13:3.9.1'
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.0'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.0.0'
 
     // Dependencies provided by Kafka Connect
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.20.0'

@@ -42,8 +42,9 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
 /**
- * Fork from <a href="in progress Kafka TimestampConverter">https://github.com/apache/kafka/blob/trunk/connect/transforms/src/main/java/org/apache/kafka/connect/transforms/TimestampConverter.java</a>
- * to support timestamps microseconds by default.
+ * Fork from <a
+ * href="https://github.com/apache/kafka/blob/trunk/connect/transforms/src/main/java/org/apache/kafka/connect/transforms/TimestampConverter.java">in
+ * progress Kafka TimestampConverter</a> to support timestamps microseconds by default.
  *
  * @param <R> Type of he record.
  * @author Michelin

@@ -1,5 +1,26 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.michelin.kafka.connect.transforms;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
@@ -10,24 +31,18 @@ import org.apache.kafka.connect.transforms.util.SimpleConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.util.Iterator;
-import java.util.Map;
-
 /**
- * <p>Kafka Connect Single Message Transform (SMT) that takes an existing JSON header
- * and expands each key-value pair into separate individual Kafka message headers.
- * The original JSON header is removed after expansion.</p>
+ * Kafka Connect Single Message Transform (SMT) that takes an existing JSON header and expands each key-value pair into
+ * separate individual Kafka message headers. The original JSON header is removed after expansion.
  *
- * <p>This transform is useful when you have JSON content in a header that you want
- * to split into multiple headers for better message routing and filtering.</p>
+ * <p>This transform is useful when you have JSON content in a header that you want to split into multiple headers for
+ * better message routing and filtering.
  *
  * <p>Configuration:
+ *
  * <ul>
- *     <li>header.field: Header name containing the JSON map (default: "headers")</li>
- * </ul></p>
+ *   <li>header.field: Header name containing the JSON map (default: "headers")
+ * </ul>
  */
 public class ExpandJsonHeaders<R extends ConnectRecord<R>> implements Transformation<R> {
 
@@ -37,8 +52,12 @@ public class ExpandJsonHeaders<R extends ConnectRecord<R>> implements Transforma
     private static final String HEADER_FIELD_DEFAULT = "headers";
 
     public static final ConfigDef CONFIG_DEF = new ConfigDef()
-        .define(HEADER_FIELD_CONFIG, ConfigDef.Type.STRING, HEADER_FIELD_DEFAULT,
-            ConfigDef.Importance.HIGH, "Header name containing the JSON map");
+            .define(
+                    HEADER_FIELD_CONFIG,
+                    ConfigDef.Type.STRING,
+                    HEADER_FIELD_DEFAULT,
+                    ConfigDef.Importance.HIGH,
+                    "Header name containing the JSON map");
 
     private String headerField;
     private ObjectMapper objectMapper;
@@ -53,11 +72,10 @@ public class ExpandJsonHeaders<R extends ConnectRecord<R>> implements Transforma
     }
 
     /**
-     * Applies the transformation to expand a JSON header into individual headers.
-     * Extracts key-value pairs from the specified JSON header field, adds them as
-     * separate headers, and removes the original JSON header. If the header is
-     * missing or invalid, the original record is returned unchanged.
-
+     * Applies the transformation to expand a JSON header into individual headers. Extracts key-value pairs from the
+     * specified JSON header field, adds them as separate headers, and removes the original JSON header. If the header
+     * is missing or invalid, the original record is returned unchanged.
+     *
      * @param currentRecord the Kafka Connect record to transform
      * @return the transformed record with expanded headers
      */
@@ -98,15 +116,14 @@ public class ExpandJsonHeaders<R extends ConnectRecord<R>> implements Transforma
         }
 
         return currentRecord.newRecord(
-            currentRecord.topic(),
-            currentRecord.kafkaPartition(),
-            currentRecord.keySchema(),
-            currentRecord.key(),
-            currentRecord.valueSchema(),
-            currentRecord.value(),
-            currentRecord.timestamp(),
-            headers
-        );
+                currentRecord.topic(),
+                currentRecord.kafkaPartition(),
+                currentRecord.keySchema(),
+                currentRecord.key(),
+                currentRecord.valueSchema(),
+                currentRecord.value(),
+                currentRecord.timestamp(),
+                headers);
     }
 
     @Override

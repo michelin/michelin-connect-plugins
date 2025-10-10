@@ -1,5 +1,27 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.michelin.kafka.connect.transforms;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.header.ConnectHeaders;
 import org.apache.kafka.connect.header.Header;
@@ -7,11 +29,6 @@ import org.apache.kafka.connect.header.Headers;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class ExpandJsonHeadersTest {
 
@@ -51,8 +68,7 @@ class ExpandJsonHeadersTest {
         headers.addString("headers", "{\"userId\":\"user123\",\"requestId\":\"req456\",\"source\":\"web\"}");
 
         SourceRecord record = new SourceRecord(
-            null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers
-        );
+                null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers);
 
         // Apply transform
         SourceRecord transformed = transform.apply(record);
@@ -81,8 +97,7 @@ class ExpandJsonHeadersTest {
         headers.addString("metadata", "{\"version\":\"1.0\",\"type\":\"event\"}");
 
         SourceRecord record = new SourceRecord(
-            null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers
-        );
+                null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers);
 
         // Apply transform
         SourceRecord transformed = transform.apply(record);
@@ -109,8 +124,7 @@ class ExpandJsonHeadersTest {
         headers.addString("headers", "{}");
 
         SourceRecord record = new SourceRecord(
-            null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers
-        );
+                null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers);
 
         // Apply transform
         SourceRecord transformed = transform.apply(record);
@@ -132,8 +146,7 @@ class ExpandJsonHeadersTest {
         headers.addString("other_header", "some_value");
 
         SourceRecord record = new SourceRecord(
-            null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers
-        );
+                null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers);
 
         // Apply transform
         SourceRecord transformed = transform.apply(record);
@@ -154,8 +167,7 @@ class ExpandJsonHeadersTest {
         headers.addString("headers", "invalid json {");
 
         SourceRecord record = new SourceRecord(
-            null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers
-        );
+                null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers);
 
         // Apply transform
         SourceRecord transformed = transform.apply(record);
@@ -178,8 +190,7 @@ class ExpandJsonHeadersTest {
         headers.addString("headers", "[\"item1\", \"item2\"]");
 
         SourceRecord record = new SourceRecord(
-            null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers
-        );
+                null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers);
 
         // Apply transform
         SourceRecord transformed = transform.apply(record);
@@ -199,11 +210,11 @@ class ExpandJsonHeadersTest {
 
         // Create record with complex JSON values (nested objects, arrays, etc.)
         Headers headers = new ConnectHeaders();
-        headers.addString("headers", "{\"simple\":\"value\",\"number\":42,\"boolean\":true,\"nested\":{\"key\":\"value\"}}");
+        headers.addString(
+                "headers", "{\"simple\":\"value\",\"number\":42,\"boolean\":true,\"nested\":{\"key\":\"value\"}}");
 
         SourceRecord record = new SourceRecord(
-            null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers
-        );
+                null, null, "test-topic", null, null, null, Schema.STRING_SCHEMA, "test-value", null, headers);
 
         // Apply transform
         SourceRecord transformed = transform.apply(record);

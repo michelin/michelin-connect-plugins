@@ -33,7 +33,7 @@ dependencies {
 
     // Dependencies provided by Kafka Connect
     compileOnly 'com.fasterxml.jackson.core:jackson-databind:2.20.0'
-    compileOnly 'org.slf4j:slf4j-api:1.7.36'
+    compileOnly 'org.slf4j:slf4j-api:2.0.17'
 }
 java {
     sourceCompatibility = '11'

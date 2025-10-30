@@ -41,7 +41,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
-          name: ns4kafka
+          name: michelin-connect-plugins
           path: build/libs/michelin-connect-plugins-${{ steps.metadata.outputs.current_version }}.jar
           
       - name: Generate release changelog

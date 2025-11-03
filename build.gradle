@@ -10,7 +10,7 @@ plugins {
     // Apply the java-library plugin for API and implementation separation.
     id 'java-library'
     // Add spotless plugin
-    id("com.diffplug.spotless") version "7.2.1"
+    id("com.diffplug.spotless") version "8.0.0"
 }
 
 repositories {

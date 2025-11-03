@@ -45,7 +45,7 @@ jobs:
           path: build/libs/michelin-connect-plugins-${{ steps.metadata.outputs.current_version }}.jar
           
       - name: Generate release changelog
-        uses: mikepenz/release-changelog-builder-action@v5
+        uses: mikepenz/release-changelog-builder-action@v6
         id: build_changelog
         with:
           configuration: changelog-builder.json

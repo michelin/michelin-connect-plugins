@@ -55,7 +55,7 @@ jobs:
           category: source-code
           
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: kafka-connect-plugins
           path: ${{ github.workspace }}/build/libs/*.jar
